@@ -15,11 +15,13 @@ public class ConnectSQLMR extends Thread {
 
 	// server
 	private final static int port = 8765;
+	private final static int timeOut = 15000;
 	private ServerSocket server;
 	private Socket socket;
 	private InputStream in;
 	private OutputStream out;
 	private int byteLen = 1024;
+	private int intTypeLen = 2;
 	private Buffer sendToUser = new Buffer(byteLen);
 
 
@@ -38,11 +40,8 @@ public class ConnectSQLMR extends Thread {
 	}
 
 	public void run() {
-
-
-
 		int statementLen;
-		
+		String statement;
 		byte[] queryLen = new byte[2];
 
 		while (true) {
@@ -52,31 +51,21 @@ public class ConnectSQLMR extends Thread {
 					socket = server.accept();
 				}
 
-				socket.setSoTimeout(15000);
+				socket.setSoTimeout(timeOut);
 				in = new BufferedInputStream(socket.getInputStream());
 				out = new BufferedOutputStream(socket.getOutputStream());
 
 				getClientInfo();
 			
-				int count;
+				int countDIgit;
 
-				while ((count = in.read(queryLen, 0, 2)) == 2) {//if there have packets
-					System.out.println("count: " + count);//XXX: for testing
+				while ((countDIgit = in.read(queryLen, 0, intTypeLen)) != -1) {//if there have packets
+					System.out.println("count: " + countDIgit);//XXX: for testing
 					statementLen = readInt(queryLen);
-					String statement = getStatement(statementLen);
-					System.out.println("chechPointB");
+					statement = getStatement(statementLen);
 					
 					SendColumnInfo(statement);
-					System.out.println("chechPointC");
-					out.write(sendToUser.getByteBuffer(), 0,
-							sendToUser.getPosition());
-					out.flush();
-					System.out.println("chechPointD");
 					SendResults(statement);
-					System.out.println("chechPointF");
-					out.write(sendToUser.getByteBuffer(), 0,
-							sendToUser.getPosition());
-					out.flush();
 				}
 				
 				//clear client's information to let others can use this.
@@ -112,22 +101,22 @@ public class ConnectSQLMR extends Thread {
 			int InfoLen;
 			byte[] StreamBuf = new byte[byteLen];
 			
-			in.read(StreamBuf, 0, 2);
+			in.read(StreamBuf, 0, intTypeLen);
 			InfoLen = readInt(StreamBuf);
 			in.read(StreamBuf, 0, InfoLen);
 			encoding = new String(StreamBuf, 0, InfoLen);
 
-			in.read(StreamBuf, 0, 2);
+			in.read(StreamBuf, 0, intTypeLen);
 			InfoLen = readInt(StreamBuf);
 			in.read(StreamBuf, 0, InfoLen);
 			user = new String(StreamBuf, 0, InfoLen, encoding);
 
-			in.read(StreamBuf, 0, 2);
+			in.read(StreamBuf, 0, intTypeLen);
 			InfoLen = readInt(StreamBuf);
 			in.read(StreamBuf, 0, InfoLen);
 			password = new String(StreamBuf, 0, InfoLen, encoding);
 
-			in.read(StreamBuf, 0, 2);
+			in.read(StreamBuf, 0, intTypeLen);
 			InfoLen = readInt(StreamBuf);
 			in.read(StreamBuf, 0, InfoLen);
 			database = new String(StreamBuf, 0, InfoLen, encoding);
@@ -160,7 +149,8 @@ public class ConnectSQLMR extends Thread {
 				while (statementLen > byteLen) {
 					statementLen -= byteLen;
 					in.read(StreamBuf, 0, byteLen);
-					statement.append(new String(StreamBuf, 0, byteLen, encoding));
+					statement
+							.append(new String(StreamBuf, 0, byteLen, encoding));
 				}
 				if (statementLen > 0) {
 					in.read(StreamBuf, 0, statementLen);
@@ -168,7 +158,6 @@ public class ConnectSQLMR extends Thread {
 							encoding));
 				}
 			}
-			System.out.println("line172 Statement:" + statement.toString());
 			return statement.toString();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -210,8 +199,7 @@ public class ConnectSQLMR extends Thread {
 				sendToUser.writeByte((byte) (packetLen & 0xff));
 				sendToUser.writeByte((byte) ((packetLen >> 8) & 0xff));
 				sendToUser.writeByte((byte) ((packetLen >> 16) & 0xff));
-				sendToUser.writeByte((byte) 0x00);// discard
-													// (multi-packetseq)
+				sendToUser.writeByte((byte) 0x00);// discard (multi-packetseq)
 
 				for (int i = 0; i < rowDataSplit.length; i++) {
 					sendToUser.writeByte((byte) 0xfc);
@@ -245,6 +233,10 @@ public class ConnectSQLMR extends Thread {
 				sendToUser.writeByte((byte) 0x00);
 				sendToUser.writeByte((byte) 0x00);
 				sendToUser.writeByte((byte) 0xfe);
+				
+				out.write(sendToUser.getByteBuffer(), 0,
+						sendToUser.getPosition());
+				out.flush();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -287,9 +279,9 @@ public class ConnectSQLMR extends Thread {
 			sendToUser.writeInt(columnCount);
 
 			/* column info */
-			int tableNameLen;// byte
+			int tableNameLen;
 			String tableName;
-			int nameLen;// byte
+			int nameLen;
 			String name;
 			int colLen;
 			String colType;
@@ -338,6 +330,10 @@ public class ConnectSQLMR extends Thread {
 													// currently 2
 				sendToUser.writeInt(colFlag);
 				sendToUser.writeByte(colDecimals);
+				
+				out.write(sendToUser.getByteBuffer(), 0,
+						sendToUser.getPosition());
+				out.flush();
 			}
 
 		} catch (IOException e) {
