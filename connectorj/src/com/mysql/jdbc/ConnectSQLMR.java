@@ -254,8 +254,8 @@ public class ConnectSQLMR extends Thread {
 		String[] parseColumnInfo = new String[4];
 		
 		parseColumnInfo[0] = "java";
-		parseColumnInfo[1] = "columnInfo";// -jar
-		parseColumnInfo[2] = "";// waiting for junior
+		parseColumnInfo[1] = "-cp .:parser.jar";//"columnInfo";
+		parseColumnInfo[2] = "mj.SqlParser.SqlParser";// waiting for junior
 		parseColumnInfo[3] = statement;
 
 		// parsing column information
