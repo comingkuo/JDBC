@@ -11,10 +11,15 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+
+/*
+ *This class is a SQLMR server, client can use this to communicate with SQLMR.
+ *In this server, we will receive client's information(name, password, database) and statements.
+ *Then we will execute those statements and wrap the result set in packets. 
+ * */
 public class ConnectSQLMR extends Thread {
 
 	// server
-	private final static int port = 8765;
 	private final static int timeOut = 15000;
 	private ServerSocket server;
 	private Socket socket;
@@ -31,11 +36,21 @@ public class ConnectSQLMR extends Thread {
 	private String database;
 	private String encoding;
 
+	
+	/*
+	 * 
+	 * */
 	public ConnectSQLMR() {
-		try {
-			server = new ServerSocket(port);
-		} catch (IOException e) {
-			System.out.println("IOException: " + e.toString());
+		int port = 8765;
+		
+		while (true) {
+			try {
+				server = new ServerSocket(port);
+				System.out.println("port is: " + port);
+				break;
+			} catch (IOException e) {
+				port += Math.random() * 10;
+			}
 		}
 	}
 
@@ -185,7 +200,6 @@ public class ConnectSQLMR extends Thread {
 		rowDataStream = rowDataExec.getInputStream();
 		rowDataReader = new InputStreamReader(rowDataStream);
 		rowDataBuffer = new BufferedReader(rowDataReader);
-		// TODO close stream when we don't want to use again.
 
 		sendToUser.clear();
 		String rowDataLine;
@@ -293,6 +307,7 @@ public class ConnectSQLMR extends Thread {
 
 			for (int i = 0; i < columnCount; i++) {
 				if ((columnInfoLine = columnInfoBuffer.readLine()) == null)
+					//FIXME : if is insert or update, there will not return anything. 
 					throw new NullPointerException();
 
 				columnSplit = columnInfoLine.split("	");

@@ -634,10 +634,6 @@ public class StatementImpl implements Statement {
 			if (returnGeneratedKeys)
 				lastQueryIsOnDupKeyUpdate = containsOnDuplicateKeyInString(sql);
 			
-			
-			System.out.println("countstmt: " + countstmt);
-			
-			
 			resetCancelledState();// cancel a statement or task
 
 			checkNullOrEmptyQuery(sql);

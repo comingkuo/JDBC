@@ -415,7 +415,8 @@ public class MysqlIO {
             fields = new Field[(int) columnCount];
 
             for (int i = 0; i < columnCount; i++) {
-            	Buffer fieldPacket = null;
+            	System.out.println("count: " + columnCount +" line419 i= " + i);
+            	Buffer fieldPacket = null;   
                 fieldPacket = readPacket();
                 fields[i] = unpackField(fieldPacket, false);
             }
@@ -715,83 +716,6 @@ public class MysqlIO {
      */
     protected final Field unpackField(Buffer packet,
         boolean extractDefaultValues) throws SQLException {
-    	//default is false
-        if (this.use41Extensions) {
-            // we only store the position of the string and
-            // materialize only if needed...
-            if (this.has41NewNewProt) {
-                // Not used yet, 5.0?
-                int catalogNameStart = packet.getPosition() + 1;
-                int catalogNameLength = packet.fastSkipLenString();
-                catalogNameStart = adjustStartForFieldLength(catalogNameStart, catalogNameLength);
-            }
-
-            int databaseNameStart = packet.getPosition() + 1;
-            int databaseNameLength = packet.fastSkipLenString();
-            databaseNameStart = adjustStartForFieldLength(databaseNameStart, databaseNameLength);
-
-            int tableNameStart = packet.getPosition() + 1;
-            int tableNameLength = packet.fastSkipLenString();
-            tableNameStart = adjustStartForFieldLength(tableNameStart, tableNameLength);
-
-            // orgTableName is never used so skip
-            int originalTableNameStart = packet.getPosition() + 1;
-            int originalTableNameLength = packet.fastSkipLenString();
-            originalTableNameStart = adjustStartForFieldLength(originalTableNameStart, originalTableNameLength);
-
-            // we only store the position again...
-            int nameStart = packet.getPosition() + 1;
-            int nameLength = packet.fastSkipLenString();
-
-            nameStart = adjustStartForFieldLength(nameStart, nameLength);
-
-            // orgColName is not required so skip...
-            int originalColumnNameStart = packet.getPosition() + 1;
-            int originalColumnNameLength = packet.fastSkipLenString();
-            originalColumnNameStart = adjustStartForFieldLength(originalColumnNameStart, originalColumnNameLength);
-
-            packet.readByte();
-
-            short charSetNumber = (short) packet.readInt();
-
-            long colLength = 0;
-
-            if (this.has41NewNewProt) {
-                colLength = packet.readLong();
-            } else {
-                colLength = packet.readLongInt();
-            }
-
-            int colType = packet.readByte() & 0xff;
-
-            short colFlag = 0;
-
-            if (this.hasLongColumnInfo) {
-            	colFlag = (short) packet.readInt();
-            } else {
-                colFlag = (short) (packet.readByte() & 0xff);
-            }
-
-            int colDecimals = packet.readByte() & 0xff;
-
-            int defaultValueStart = -1;
-            int defaultValueLength = -1;
-
-            if (extractDefaultValues) {
-                defaultValueStart = packet.getPosition() + 1;
-                defaultValueLength = packet.fastSkipLenString();
-            }
-
-            Field field = new Field(this.connection, packet.getByteBuffer(),
-                    databaseNameStart, databaseNameLength, tableNameStart,
-                    tableNameLength, originalTableNameStart,
-                    originalTableNameLength, nameStart, nameLength,
-                    originalColumnNameStart, originalColumnNameLength,
-                    colLength, colType, colFlag, colDecimals,
-                    defaultValueStart, defaultValueLength, charSetNumber);
-
-            return field;
-        }
 
         int tableNameStart = packet.getPosition() + 1;
         int tableNameLength = packet.fastSkipLenString();
@@ -803,25 +727,22 @@ public class MysqlIO {
         int nameLength = packet.fastSkipLenString();
         nameStart = adjustStartForFieldLength(nameStart, nameLength);
 
+        
         int colLength = packet.readnBytes();
         int colType = packet.readnBytes();
-        packet.readByte(); // We know it's currently 2
 
         short colFlag = 0;
 
-        //default is false
-        if (this.hasLongColumnInfo) {
-            colFlag = (short) (packet.readInt());
-        } else {
-            colFlag = (short) (packet.readByte() & 0xff);
-        }
+        colFlag = (short) (packet.readInt());
 
+        
         int colDecimals = (packet.readByte() & 0xff);
         //default is false
         if (this.colDecimalNeedsBump) {
             colDecimals++;
         }
-
+        System.out.println("line745 table lengh: " + tableNameLength + "name length: " + nameLength + "colLength: " + colLength + "colType: " + colType + "colFlag" +
+        		+ colFlag + "colDecimals: " + colDecimals);
         Field field = new Field(this.connection, packet.getByteBuffer(),
                 nameStart, nameLength, tableNameStart, tableNameLength,
                 colLength, colType, colFlag, colDecimals);
@@ -1733,7 +1654,6 @@ public class MysqlIO {
                     send(this.sendPacket, this.sendPacket.getPosition());
                 } else {
                     this.packetSequence = -1;
-                    //TODO : (kuo) testing 7/29 pm 12:22
                     send(queryPacket, queryPacket.getPosition());// packet passed by PreparedStatement
                 }
             } catch (SQLException sqlEx) {
@@ -1883,10 +1803,10 @@ public class MysqlIO {
 	    		debugBuf.append(';');
 	    		this.connection.dumpTestcaseQuery(debugBuf.toString());
 	    	}
-    		
+    		System.out.println("line1881 checkPint A");
     		Buffer resultPacket = sendCommand(MysqlDefs.QUERY, null, queryPacket,
 	    			false, null, 0);
-    		
+    		System.out.println("line1884 checkPint B");
     		
 	    	long fetchBeginTime = 0;
 	    	long fetchEndTime = 0;
