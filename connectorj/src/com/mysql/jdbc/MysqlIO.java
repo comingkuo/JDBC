@@ -415,7 +415,6 @@ public class MysqlIO {
             fields = new Field[(int) columnCount];
 
             for (int i = 0; i < columnCount; i++) {
-            	System.out.println("count: " + columnCount +" line419 i= " + i);
             	Buffer fieldPacket = null;   
                 fieldPacket = readPacket();
                 fields[i] = unpackField(fieldPacket, false);
@@ -741,8 +740,7 @@ public class MysqlIO {
         if (this.colDecimalNeedsBump) {
             colDecimals++;
         }
-        System.out.println("line745 table lengh: " + tableNameLength + "name length: " + nameLength + "colLength: " + colLength + "colType: " + colType + "colFlag" +
-        		+ colFlag + "colDecimals: " + colDecimals);
+      
         Field field = new Field(this.connection, packet.getByteBuffer(),
                 nameStart, nameLength, tableNameStart, tableNameLength,
                 colLength, colType, colFlag, colDecimals);
@@ -1499,7 +1497,6 @@ public class MysqlIO {
         //in stmt.execute(sql) is false 
         boolean moreRowSetsExist = checkForMoreResults & serverHasMoreResults;
 
-        //TODO :(kuo) not trace yet
         while (moreRowSetsExist) {
         	Buffer fieldPacket = checkErrorPacket();
             fieldPacket.setPosition(0);
@@ -1761,7 +1758,6 @@ public class MysqlIO {
 	    		}
 	    		
 	    		//Buffer statementBuf = new Buffer(query.length() + 3);//one for command
-	    		System.out.println("line1849 query: " + query + " length: " + query.getBytes().length);
 	    		this.sendPacket.writeInt(query.getBytes().length);
 	    		this.sendPacket.writeByte((byte) MysqlDefs.QUERY);
 	    		this.sendPacket.writeString(query);
@@ -1803,10 +1799,8 @@ public class MysqlIO {
 	    		debugBuf.append(';');
 	    		this.connection.dumpTestcaseQuery(debugBuf.toString());
 	    	}
-    		System.out.println("line1881 checkPint A");
     		Buffer resultPacket = sendCommand(MysqlDefs.QUERY, null, queryPacket,
 	    			false, null, 0);
-    		System.out.println("line1884 checkPint B");
     		
 	    	long fetchBeginTime = 0;
 	    	long fetchEndTime = 0;
